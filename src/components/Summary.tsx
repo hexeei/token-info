@@ -1,6 +1,8 @@
 import { Card } from './ui'
 import ScoreRadar from './charts/ScoreRadar'
 import { toJson, toMarkdown, downloadFile, slugFor } from '../lib/export'
+import { computeUpside } from '../lib/scoring'
+import { formatX } from '../lib/format'
 import type { TokenAnalysis, Summary as SummaryType } from '../types'
 
 const TONE_TEXT = {
@@ -25,6 +27,12 @@ export default function Summary({ analysis, summary }: { analysis: TokenAnalysis
 
   const exportJson = () => downloadFile(`${slugFor(analysis)}-research.json`, toJson(analysis), 'application/json')
   const exportMd = () => downloadFile(`${slugFor(analysis)}-research.md`, toMarkdown(analysis), 'text/markdown')
+
+  // Best upside X (explicit target or the strongest comp) for the header chip.
+  const up = computeUpside(analysis)
+  const compXs = up.comps.map((c) => c.x).filter((x): x is number => x != null)
+  const bestX = up.targetX ?? (compXs.length ? Math.max(...compXs) : null)
+  const bestComp = compXs.length ? up.comps.reduce((a, b) => ((b.x ?? 0) > (a.x ?? 0) ? b : a)) : null
 
   return (
     <Card className="sticky top-4 overflow-hidden">
@@ -59,6 +67,15 @@ export default function Summary({ analysis, summary }: { analysis: TokenAnalysis
         <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-medium ${TONE_BORDER[scoreTone]} ${TONE_TEXT[scoreTone]}`}>
           {verdict.label}
         </div>
+
+        {bestX != null && (
+          <div className="mt-2 flex items-center justify-between rounded-xl border border-success/30 bg-success/10 px-3 py-2">
+            <span className="text-xs text-secondary">
+              Апсайд{bestComp ? ` до ${bestComp.label}` : ''}
+            </span>
+            <span className="tabular text-sm font-semibold text-success">{formatX(bestX)}</span>
+          </div>
+        )}
       </div>
 
       <div className="border-b border-bg-2 px-3 py-3">

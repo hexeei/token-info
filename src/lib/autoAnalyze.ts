@@ -1,5 +1,5 @@
 import type { TokenAnalysis, Scores, Notes, TrendDirection } from '../types'
-import { computeTokenomics, computeBuyback } from './scoring'
+import { computeTokenomics, computeBuyback, computeUpside } from './scoring'
 import { toNumber, clamp, formatPct, formatUsd, formatX } from './format'
 import { RUBRIC, SECTOR_RUBRIC, UPSIDE_RUBRIC, scoreMetric } from '../rubric'
 
@@ -113,7 +113,13 @@ export function autoAnalyze(a: TokenAnalysis): AutoResult {
     }
     scores.upside = clamp(s, 0, 10)
     const micro = mc != null && mc < 25e6 ? 'Микрокап: потенциал высокий, но риск ликвидности/выживаемости. ' : ''
-    notes.upside = (bits.length ? bits.join(', ') + '. ' : '') + micro + 'Добавьте comps конкурентов для расчёта X-потенциала.'
+    // Comps were auto-loaded before this runs — surface the X to each leader.
+    const up = computeUpside(a)
+    const compBits = up.comps
+      .filter((c) => c.x != null)
+      .map((c) => `${c.label} → ${formatX(c.x!)}`)
+    const compText = compBits.length ? `До лидеров сектора: ${compBits.join(', ')}. ` : 'Добавьте comps для расчёта X-потенциала. '
+    notes.upside = (bits.length ? bits.join(', ') + '. ' : '') + micro + compText
   }
 
   return { scores, notes, trendDirection }

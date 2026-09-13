@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import Dashboard from './components/Dashboard'
 import Editor from './components/Editor'
 import TokenSearch from './components/TokenSearch'
-import { createEmptyAnalysis } from './config'
+import { createEmptyAnalysis, SECTOR_LEADERS, newCompId } from './config'
 import { guessSector } from './lib/sectors'
 import { autoAnalyze } from './lib/autoAnalyze'
 import { clamp } from './lib/format'
-import { fetchCoin } from './api/coingecko'
+import { fetchCoin, fetchCompByTicker } from './api/coingecko'
 import { fetchProtocol } from './api/defillama'
 import { loadAll, upsert, remove } from './lib/storage'
-import type { TokenAnalysis, ScoredBlockId } from './types'
+import type { TokenAnalysis, ScoredBlockId, Comp } from './types'
 import type { CoinSearchHit } from './api/coingecko'
 
 // Immutable set of a dotted path (objects & arrays cloned along the way).
@@ -88,6 +88,7 @@ export default function App() {
       const cg = await fetchCoin(coin.id)
       const pairs: [string, unknown][] = []
       const auto: Record<string, boolean> = {}
+      let sectorGuess = ''
       const push = (path: string, value: unknown) => {
         if (value === null || value === undefined || value === '') return
         pairs.push([path, value])
@@ -105,8 +106,8 @@ export default function App() {
         push('identity.docs', cg.docs)
         push('identity.twitter', cg.twitter)
 
-        const sector = guessSector(cg.categories)
-        if (sector) push('sector.sector', sector)
+        sectorGuess = guessSector(cg.categories)
+        if (sectorGuess) push('sector.sector', sectorGuess)
 
         push('tokenomics.price', cg.price)
         push('tokenomics.marketCap', cg.marketCap)
@@ -134,12 +135,33 @@ export default function App() {
         push('valueAccrual.revenue', llama.revenue24h)
       }
 
+      // Auto-load sector leaders as upside comps → instant X-potential.
+      const selfSym = (cg.ok ? cg.symbol : coin.symbol).toUpperCase()
+      const leaderTickers = (SECTOR_LEADERS[sectorGuess] || [])
+        .filter((t) => t.toUpperCase() !== selfSym)
+        .slice(0, 2)
+      const leaderData = await Promise.all(leaderTickers.map((t) => fetchCompByTicker(t)))
+      const comps: Comp[] = leaderData
+        .map((r, i) =>
+          r.ok && r.marketCap != null
+            ? {
+                id: newCompId(),
+                ticker: leaderTickers[i],
+                name: r.name || leaderTickers[i],
+                marketCap: String(r.marketCap),
+                fdv: r.fdv != null ? String(r.fdv) : '',
+              }
+            : null,
+        )
+        .filter((c): c is Comp => c !== null)
+
       // Apply onto a fresh analysis so the previous token doesn't linger,
       // then auto-score / auto-note every block from the fetched data.
       setAnalysis(() => {
         let next = createEmptyAnalysis()
         for (const [path, value] of pairs) next = setIn(next, path, value)
         next.autoFields = auto
+        if (comps.length) next.upside.comps = comps
         const suggestion = autoAnalyze(next)
         next.scores = { ...next.scores, ...suggestion.scores }
         next.notes = { ...next.notes, ...suggestion.notes }

@@ -78,6 +78,27 @@ export function cadencePerYear(cadence: string): number | null {
   return c ? c.perYear : null
 }
 
+// Sector leaders auto-loaded as upside comps (MC pulled from CoinGecko by ticker).
+// Excludes the analysed token itself. Used only to give an instant X-potential.
+export const SECTOR_LEADERS: Record<string, string[]> = {
+  DeFi: ['AAVE', 'UNI'],
+  AI: ['TAO', 'RENDER'],
+  RWA: ['ONDO', 'PENDLE'],
+  DePIN: ['RENDER', 'HNT'],
+  L1: ['SOL', 'AVAX'],
+  L2: ['ARB', 'OP'],
+  Gaming: ['IMX', 'BEAM'],
+  Meme: ['DOGE', 'PEPE'],
+  Infra: ['LINK', 'FIL'],
+  'Perp DEX': ['HYPE', 'GMX'],
+  Restaking: ['EIGEN', 'ETHFI'],
+  'Liquid Staking': ['LDO', 'JTO'],
+  SocialFi: ['MASK'],
+  Oracle: ['LINK', 'PYTH'],
+  Bridge: ['AXL', 'W'],
+  Other: [],
+}
+
 // ---- Factory --------------------------------------------------------------
 function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
