@@ -9,6 +9,7 @@ import { clamp } from './lib/format'
 import { fetchCoin, fetchCompByTicker } from './api/coingecko'
 import { fetchProtocol } from './api/defillama'
 import { loadAll, upsert, remove } from './lib/storage'
+import { importAnalysis } from './lib/importAnalysis'
 import type { TokenAnalysis, ScoredBlockId, Comp } from './types'
 import type { CoinSearchHit } from './api/coingecko'
 
@@ -206,6 +207,20 @@ export default function App() {
     setSaved(loadAll())
     setView('dashboard')
   }
+  function handleImport(json: unknown) {
+    try {
+      const imported = importAnalysis(json)
+      setSaved(upsert(imported))
+      setAnalysis(imported)
+      setSavedFlag(true)
+      setFetchNote(null)
+      setView('editor')
+      window.scrollTo({ top: 0 })
+    } catch (e) {
+      console.warn('import failed', e)
+      alert('Импорт не удался — проверьте структуру JSON.')
+    }
+  }
 
   useEffect(() => {
     if (!fetchNote) return
@@ -235,7 +250,7 @@ export default function App() {
         </div>
 
         {view === 'dashboard' ? (
-          <Dashboard items={saved} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} />
+          <Dashboard items={saved} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} onImport={handleImport} />
         ) : (
           <Editor
             analysis={analysis}

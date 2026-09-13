@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import CompareView from './CompareView'
 import RubricPanel from './RubricPanel'
 import { computeSummary } from '../lib/scoring'
@@ -13,15 +13,33 @@ export default function Dashboard({
   onNew,
   onOpen,
   onDelete,
+  onImport,
 }: {
   items: TokenAnalysis[]
   onNew: () => void
   onOpen: (id: string) => void
   onDelete: (id: string) => void
+  onImport: (json: unknown) => void
 }) {
   const [selected, setSelected] = useState<string[]>([])
   const [comparing, setComparing] = useState(false)
   const [showRubric, setShowRubric] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        onImport(JSON.parse(String(reader.result)))
+      } catch {
+        alert('Не удалось прочитать JSON — проверьте файл.')
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = '' // allow re-importing the same file
+  }
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => {
@@ -64,6 +82,14 @@ export default function Dashboard({
             className="rounded-lg border border-bg-2 bg-bg-1 px-3 py-2 text-sm text-secondary hover:border-accent/40 hover:text-primary"
           >
             Методика
+          </button>
+          <input ref={fileRef} type="file" accept="application/json,.json" onChange={handleFile} className="hidden" />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="rounded-lg border border-bg-2 bg-bg-1 px-3 py-2 text-sm text-secondary hover:border-accent/40 hover:text-primary"
+          >
+            Импорт JSON
           </button>
           <button
             type="button"
