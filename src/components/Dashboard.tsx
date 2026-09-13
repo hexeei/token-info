@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import CompareView from './CompareView'
+import RubricPanel from './RubricPanel'
 import { computeSummary } from '../lib/scoring'
 import { formatDate } from '../lib/format'
 import type { TokenAnalysis } from '../types'
@@ -20,6 +21,7 @@ export default function Dashboard({
 }) {
   const [selected, setSelected] = useState<string[]>([])
   const [comparing, setComparing] = useState(false)
+  const [showRubric, setShowRubric] = useState(false)
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => {
@@ -58,6 +60,13 @@ export default function Dashboard({
           )}
           <button
             type="button"
+            onClick={() => setShowRubric((v) => !v)}
+            className="rounded-lg border border-bg-2 bg-bg-1 px-3 py-2 text-sm text-secondary hover:border-accent/40 hover:text-primary"
+          >
+            Методика
+          </button>
+          <button
+            type="button"
             onClick={onNew}
             className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-bg-0 hover:opacity-90"
           >
@@ -65,6 +74,12 @@ export default function Dashboard({
           </button>
         </div>
       </div>
+
+      {showRubric && (
+        <div className="mb-5">
+          <RubricPanel onClose={() => setShowRubric(false)} />
+        </div>
+      )}
 
       {comparing && compareItems.length >= 2 && (
         <div className="mb-5">
