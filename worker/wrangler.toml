@@ -1,0 +1,11 @@
+name = "token-research-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# Set at deploy time (see worker/README.md):
+#   npx wrangler secret put ANTHROPIC_API_KEY
+# Optional vars:
+[vars]
+MODEL = "claude-opus-5"      # or "claude-sonnet-5" / "claude-haiku-4-5" to cut cost
+ALLOW_ORIGIN = "*"           # lock to "https://<user>.github.io" in production
+# COINGECKO_KEY is optional; add as a secret if you hit CoinGecko rate limits.

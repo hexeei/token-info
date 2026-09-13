@@ -44,6 +44,23 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [fetchNote, setFetchNote] = useState<string | null>(null)
   const [savedFlag, setSavedFlag] = useState(false)
+  const [apiBase, setApiBase] = useState<string>(() => {
+    try {
+      return localStorage.getItem('trc:apiBase') || ''
+    } catch {
+      return ''
+    }
+  })
+  const [showSettings, setShowSettings] = useState(false)
+  function saveApiBase(v: string) {
+    const clean = v.trim().replace(/\/$/, '')
+    setApiBase(clean)
+    try {
+      localStorage.setItem('trc:apiBase', clean)
+    } catch {
+      /* ignore */
+    }
+  }
   const autosaveRef = useRef<ReturnType<typeof setTimeout>>()
 
   // ---- Autosave to LocalStorage on every change while editing ----
@@ -86,6 +103,30 @@ export default function App() {
     setLoading(true)
     setFetchNote(null)
     try {
+      // Backend path — if a research API is configured, let it fill EVERYTHING
+      // (unlocks, buyback, distribution, value accrual) for any token.
+      if (apiBase) {
+        try {
+          const r = await fetch(`${apiBase}/api/token?q=${encodeURIComponent(coin.id)}`)
+          if (r.ok) {
+            const data = await r.json()
+            if (data && !data.error) {
+              const imported = importAnalysis(data)
+              setSaved(upsert(imported))
+              setAnalysis(imported)
+              setSavedFlag(true)
+              setFetchNote(`Разбор собран бэкендом (все метрики): ${imported.identity.name}.`)
+              setView('editor')
+              return
+            }
+          }
+          setFetchNote('Бэкенд не ответил — собираю из бесплатных API (deep-метрики вручную).')
+        } catch (e) {
+          console.warn('backend failed, falling back to client', e)
+          setFetchNote('Бэкенд недоступен — собираю из бесплатных API (deep-метрики вручную).')
+        }
+      }
+
       const cg = await fetchCoin(coin.id)
       const pairs: [string, unknown][] = []
       const auto: Record<string, boolean> = {}
@@ -243,10 +284,56 @@ export default function App() {
 
         {/* Global search — type a ticker anywhere and get a filled analysis. */}
         <div className="mb-6">
-          <TokenSearch onSelect={handleSelect} loading={loading} />
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <TokenSearch onSelect={handleSelect} loading={loading} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSettings((v) => !v)}
+              title="Настройки бэкенда"
+              className={`shrink-0 rounded-xl border px-3 py-2.5 text-sm ${
+                apiBase ? 'border-success/40 bg-success/10 text-success' : 'border-bg-2 bg-bg-1 text-secondary hover:text-primary'
+              }`}
+            >
+              ⚙
+            </button>
+          </div>
           <p className="mt-2 text-xs text-muted">
-            {fetchNote ?? 'Введите тикер — данные, скоры, вердикт и ред-флаги заполнятся автоматически.'}
+            {fetchNote ??
+              (apiBase
+                ? 'Бэкенд подключён — введите тикер, всё (включая анлоки и байбек) соберётся автоматически.'
+                : 'Введите тикер — рынок/скоры заполнятся авто. Для анлоков/байбека на все токены подключите бэкенд (⚙).')}
           </p>
+
+          {showSettings && (
+            <div className="mt-3 rounded-xl border border-bg-2 bg-bg-1 px-4 py-3">
+              <label className="block text-xs font-medium text-secondary">
+                URL бэкенда (Cloudflare Worker)
+              </label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  value={apiBase}
+                  onChange={(e) => saveApiBase(e.target.value)}
+                  placeholder="https://token-research-api.<subdomain>.workers.dev"
+                  className="tabular w-full rounded-lg border border-bg-2 bg-bg-0 px-3 py-2 text-sm text-primary placeholder:text-muted focus:border-accent/60 focus:outline-none"
+                />
+                {apiBase && (
+                  <button
+                    type="button"
+                    onClick={() => saveApiBase('')}
+                    className="rounded-lg border border-bg-2 px-3 py-2 text-sm text-muted hover:text-danger"
+                  >
+                    Сброс
+                  </button>
+                )}
+              </div>
+              <p className="mt-2 text-[11px] text-muted">
+                Разверни бэкенд по инструкции в <span className="tabular">worker/README.md</span> и вставь его URL сюда.
+                Тогда сайт сам собирает ВСЕ метрики (рынок, выручка, анлоки, байбек, value accrual) на любой токен. Хранится в этом браузере.
+              </p>
+            </div>
+          )}
         </div>
 
         {view === 'dashboard' ? (

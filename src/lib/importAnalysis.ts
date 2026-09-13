@@ -50,13 +50,16 @@ export function importAnalysis(json: unknown): TokenAnalysis {
   merged.notes = { ...base.notes, ...(merged.notes || {}) }
   merged.autoFields = merged.autoFields || {}
 
-  // If the import left scores at defaults, derive them from the data.
+  // If the import left scores at defaults, derive them from the data — but keep
+  // any notes the payload already provided (backend research notes are richer).
   const allDefault = Object.values(merged.scores).every((s) => s === 5)
   if (allDefault) {
     const sug = autoAnalyze(merged)
     merged.scores = { ...merged.scores, ...sug.scores }
-    merged.notes = { ...merged.notes, ...sug.notes }
-    if (sug.trendDirection) merged.trend.direction = sug.trendDirection
+    for (const k of Object.keys(sug.notes) as (keyof typeof sug.notes)[]) {
+      if (!merged.notes[k] && sug.notes[k]) merged.notes[k] = sug.notes[k] as string
+    }
+    if (sug.trendDirection && !merged.trend.direction) merged.trend.direction = sug.trendDirection
   }
 
   return merged
