@@ -1,4 +1,3 @@
-import TokenSearch from './TokenSearch'
 import Summary from './Summary'
 import IdentityBlock from './blocks/IdentityBlock'
 import SectorBlock from './blocks/SectorBlock'
@@ -10,7 +9,6 @@ import UpsideBlock from './blocks/UpsideBlock'
 import { computeSummary } from '../lib/scoring'
 import type { BlockProps } from './blocks/blockProps'
 import type { TokenAnalysis, ScoredBlockId } from '../types'
-import type { CoinSearchHit } from '../api/coingecko'
 
 export default function Editor({
   analysis,
@@ -18,9 +16,6 @@ export default function Editor({
   setScore,
   setNote,
   isAuto,
-  onSelect,
-  loading,
-  fetchNote,
   onBack,
   saved,
 }: {
@@ -29,13 +24,11 @@ export default function Editor({
   setScore: (id: ScoredBlockId, n: number) => void
   setNote: (id: ScoredBlockId, v: string) => void
   isAuto: (path: string) => boolean
-  onSelect: (coin: CoinSearchHit) => void
-  loading: boolean
-  fetchNote: string | null
   onBack: () => void
   saved: boolean
 }) {
   const summary = computeSummary(analysis)
+  const autoPrefilled = Object.keys(analysis.autoFields).length > 0
   const blockProps: BlockProps = { a: analysis, set, setScore, setNote, isAuto }
 
   return (
@@ -54,10 +47,13 @@ export default function Editor({
         </span>
       </div>
 
-      <div className="mb-4">
-        <TokenSearch onSelect={onSelect} loading={loading} />
-        {fetchNote && <p className="mt-2 text-xs text-secondary">{fetchNote}</p>}
-      </div>
+      {autoPrefilled && (
+        <div className="mb-4 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-xs text-accent">
+          Скоры, заметки и тренд предзаполнены автоматически по данным CoinGecko/DefiLlama —
+          проверьте и скорректируйте под свой взгляд. Байбек и распределение обычно нужно
+          заполнить вручную.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
         <main className="space-y-4">

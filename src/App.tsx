@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import Dashboard from './components/Dashboard'
 import Editor from './components/Editor'
+import TokenSearch from './components/TokenSearch'
 import { createEmptyAnalysis } from './config'
 import { guessSector } from './lib/sectors'
+import { autoAnalyze } from './lib/autoAnalyze'
 import { clamp } from './lib/format'
 import { fetchCoin } from './api/coingecko'
 import { fetchProtocol } from './api/defillama'
@@ -132,13 +134,19 @@ export default function App() {
         push('valueAccrual.revenue', llama.revenue24h)
       }
 
-      // Apply onto a fresh analysis so the previous token doesn't linger.
+      // Apply onto a fresh analysis so the previous token doesn't linger,
+      // then auto-score / auto-note every block from the fetched data.
       setAnalysis(() => {
         let next = createEmptyAnalysis()
         for (const [path, value] of pairs) next = setIn(next, path, value)
         next.autoFields = auto
+        const suggestion = autoAnalyze(next)
+        next.scores = { ...next.scores, ...suggestion.scores }
+        next.notes = { ...next.notes, ...suggestion.notes }
+        if (suggestion.trendDirection) next.trend.direction = suggestion.trendDirection
         return next
       })
+      setView('editor')
 
       if (!cg.ok) setFetchNote('CoinGecko недоступен или лимит — заполнено из поиска, остальное вручную.')
       else if (!llama.matched) setFetchNote('Протокол не найден в DefiLlama — fees/revenue заполните вручную.')
@@ -196,6 +204,14 @@ export default function App() {
           </div>
         </header>
 
+        {/* Global search — type a ticker anywhere and get a filled analysis. */}
+        <div className="mb-6">
+          <TokenSearch onSelect={handleSelect} loading={loading} />
+          <p className="mt-2 text-xs text-muted">
+            {fetchNote ?? 'Введите тикер — данные, скоры, вердикт и ред-флаги заполнятся автоматически.'}
+          </p>
+        </div>
+
         {view === 'dashboard' ? (
           <Dashboard items={saved} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} />
         ) : (
@@ -205,9 +221,6 @@ export default function App() {
             setScore={setScore}
             setNote={setNote}
             isAuto={isAuto}
-            onSelect={handleSelect}
-            loading={loading}
-            fetchNote={fetchNote}
             onBack={handleBack}
             saved={savedFlag}
           />
