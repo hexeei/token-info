@@ -8,11 +8,17 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts'
-import { toNumber, daysUntil, compactNumber } from '../../lib/format.js'
+import { toNumber, daysUntil, compactNumber } from '../../lib/format'
+import type { UnlockEvent } from '../../types'
 
-// Bar timeline of token unlocks by date. Bars within the next 90 days are
-// tinted danger (they are the near-term overhang); the rest use the accent.
-export default function UnlockTimeline({ unlocks, circulating }) {
+// Bar timeline of token unlocks by date. Bars within 90 days are tinted danger.
+export default function UnlockTimeline({
+  unlocks,
+  circulating,
+}: {
+  unlocks: UnlockEvent[]
+  circulating: number | null
+}) {
   const rows = (unlocks || [])
     .filter((u) => u.date)
     .map((u) => {
@@ -27,7 +33,7 @@ export default function UnlockTimeline({ unlocks, circulating }) {
         near: dd != null && dd >= 0 && dd <= 90,
       }
     })
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   if (rows.length === 0) {
     return (
@@ -45,13 +51,13 @@ export default function UnlockTimeline({ unlocks, circulating }) {
           <XAxis
             dataKey="date"
             tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
-            tickFormatter={(d) => (d || '').slice(0, 7)}
+            tickFormatter={(d: string) => (d || '').slice(0, 7)}
             stroke="var(--bg-2)"
           />
           <YAxis
             tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
             stroke="var(--bg-2)"
-            tickFormatter={(v) => `${v}%`}
+            tickFormatter={(v: number) => `${v}%`}
             width={44}
           />
           <Tooltip
@@ -63,7 +69,7 @@ export default function UnlockTimeline({ unlocks, circulating }) {
               color: 'var(--text-primary)',
               fontSize: 12,
             }}
-            formatter={(v, _n, item) => {
+            formatter={(v: number | string, _n: string, item: any) => {
               const amt = item?.payload?.amount
               return [
                 `${v}% от circ${amt != null ? ` · ${compactNumber(amt)} токенов` : ''}`,

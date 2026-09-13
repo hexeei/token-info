@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
-import { searchCoins } from '../api/coingecko.js'
+import { searchCoins } from '../api/coingecko'
+import type { CoinSearchHit } from '../api/coingecko'
 
-// Ticker/name input with debounced CoinGecko autocomplete. Picking a candidate
-// triggers the parent's auto-fill flow.
-export default function TokenSearch({ onSelect, loading }) {
+// Ticker/name input with debounced CoinGecko autocomplete.
+export default function TokenSearch({
+  onSelect,
+  loading,
+}: {
+  onSelect: (coin: CoinSearchHit) => void
+  loading?: boolean
+}) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState([])
+  const [results, setResults] = useState<CoinSearchHit[]>([])
   const [open, setOpen] = useState(false)
   const [searching, setSearching] = useState(false)
   const [activeIdx, setActiveIdx] = useState(-1)
-  const boxRef = useRef(null)
-  const debounceRef = useRef(null)
+  const boxRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -28,24 +34,26 @@ export default function TokenSearch({ onSelect, loading }) {
       setActiveIdx(-1)
       setSearching(false)
     }, 350)
-    return () => debounceRef.current && clearTimeout(debounceRef.current)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [query])
 
   useEffect(() => {
-    function onClick(e) {
-      if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false)
+    function onClick(e: MouseEvent) {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
   }, [])
 
-  function choose(coin) {
+  function choose(coin: CoinSearchHit) {
     setQuery(`${coin.name} (${coin.symbol})`)
     setOpen(false)
     onSelect(coin)
   }
 
-  function onKeyDown(e) {
+  function onKeyDown(e: React.KeyboardEvent) {
     if (!open || results.length === 0) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -85,9 +93,7 @@ export default function TokenSearch({ onSelect, loading }) {
                 type="button"
                 onMouseEnter={() => setActiveIdx(i)}
                 onClick={() => choose(c)}
-                className={`flex w-full items-center gap-3 px-3 py-2 text-left ${
-                  i === activeIdx ? 'bg-bg-2' : ''
-                }`}
+                className={`flex w-full items-center gap-3 px-3 py-2 text-left ${i === activeIdx ? 'bg-bg-2' : ''}`}
               >
                 {c.thumb ? (
                   <img src={c.thumb} alt="" className="h-6 w-6 rounded-full" />

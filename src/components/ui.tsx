@@ -1,15 +1,35 @@
-// Shared UI primitives for the checklist. Kept together so the blocks stay
-// declarative. Color semantics are strict: accent = score/neutral,
-// success = good/upside, danger = risk/flag.
+import type { ReactNode } from 'react'
 
-export function Card({ children, className = '' }) {
-  return (
-    <section className={`rounded-2xl border border-bg-2 bg-bg-1 ${className}`}>{children}</section>
-  )
+// Shared UI primitives. Color semantics are strict:
+// accent = score/neutral, success = good/upside, danger = risk/flag.
+
+type Tone = 'primary' | 'accent' | 'success' | 'danger' | 'muted'
+
+const TONE_TEXT: Record<Tone, string> = {
+  primary: 'text-primary',
+  accent: 'text-accent',
+  success: 'text-success',
+  danger: 'text-danger',
+  muted: 'text-secondary',
 }
 
-// A numbered checklist block: header + optional auto note + body.
-export function Block({ index, title, subtitle, right, children }) {
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <section className={`rounded-2xl border border-bg-2 bg-bg-1 ${className}`}>{children}</section>
+}
+
+export function Block({
+  index,
+  title,
+  subtitle,
+  right,
+  children,
+}: {
+  index: number
+  title: string
+  subtitle?: string
+  right?: ReactNode
+  children: ReactNode
+}) {
   return (
     <Card className="overflow-hidden">
       <header className="flex items-start justify-between gap-4 border-b border-bg-2 px-5 py-4">
@@ -29,20 +49,37 @@ export function Block({ index, title, subtitle, right, children }) {
   )
 }
 
-export function AutoBadge({ show }) {
+export function AutoBadge({ show }: { show?: boolean }) {
   if (!show) return null
   return (
     <span
       title="Автоматически подтянуто из API — можно отредактировать"
-      className="tabular ml-2 inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent"
+      className="tabular ml-2 inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent"
     >
       auto
     </span>
   )
 }
 
-// Labeled text input.
-export function Field({ label, value, onChange, placeholder, auto, mono, type = 'text', hint }) {
+export function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  auto,
+  mono,
+  type = 'text',
+  hint,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  auto?: boolean
+  mono?: boolean
+  type?: string
+  hint?: string
+}) {
   return (
     <label className="block">
       <span className="flex items-center text-xs font-medium text-secondary">
@@ -63,7 +100,19 @@ export function Field({ label, value, onChange, placeholder, auto, mono, type = 
   )
 }
 
-export function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
+export function TextArea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  label?: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  rows?: number
+}) {
   return (
     <label className="block">
       {label && <span className="text-xs font-medium text-secondary">{label}</span>}
@@ -78,7 +127,22 @@ export function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
   )
 }
 
-export function Select({ label, value, onChange, options, placeholder = '—', auto }) {
+export function Select({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = '—',
+  auto,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string }[] | string[]
+  placeholder?: string
+  auto?: boolean
+}) {
+  const opts = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o))
   return (
     <label className="block">
       <span className="flex items-center text-xs font-medium text-secondary">
@@ -91,9 +155,9 @@ export function Select({ label, value, onChange, options, placeholder = '—', a
         className="mt-1 w-full rounded-lg border border-bg-2 bg-bg-0 px-3 py-2 text-sm text-primary focus:border-accent/60 focus:outline-none"
       >
         <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
+        {opts.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
           </option>
         ))}
       </select>
@@ -101,27 +165,39 @@ export function Select({ label, value, onChange, options, placeholder = '—', a
   )
 }
 
-// A read-only derived metric tile.
-export function Metric({ label, value, tone = 'primary', hint }) {
-  const toneClass =
-    tone === 'success'
-      ? 'text-success'
-      : tone === 'danger'
-        ? 'text-danger'
-        : tone === 'accent'
-          ? 'text-accent'
-          : 'text-primary'
+export function Metric({
+  label,
+  value,
+  tone = 'primary',
+  hint,
+}: {
+  label: string
+  value: ReactNode
+  tone?: Tone
+  hint?: string
+}) {
   return (
     <div className="rounded-xl border border-bg-2 bg-bg-0 px-3 py-2.5">
       <div className="text-[11px] uppercase tracking-wide text-muted">{label}</div>
-      <div className={`tabular mt-1 text-lg font-semibold leading-none ${toneClass}`}>{value}</div>
+      <div className={`tabular mt-1 text-lg font-semibold leading-none ${TONE_TEXT[tone]}`}>{value}</div>
       {hint && <div className="mt-1 text-[11px] text-muted">{hint}</div>}
     </div>
   )
 }
 
-// 0–10 score slider + notes. Every scored block ends with one.
-export function ScoreSlider({ score, onScore, note, onNote, notePlaceholder }) {
+export function ScoreSlider({
+  score,
+  onScore,
+  note,
+  onNote,
+  notePlaceholder,
+}: {
+  score: number
+  onScore: (n: number) => void
+  note: string
+  onNote: (v: string) => void
+  notePlaceholder?: string
+}) {
   return (
     <div className="mt-5 border-t border-bg-2 pt-4">
       <div className="flex items-center justify-between">
@@ -130,9 +206,9 @@ export function ScoreSlider({ score, onScore, note, onNote, notePlaceholder }) {
       </div>
       <input
         type="range"
-        min="0"
-        max="10"
-        step="1"
+        min={0}
+        max={10}
+        step={1}
         value={score}
         onChange={(e) => onScore(Number(e.target.value))}
         className="mt-2"
@@ -147,11 +223,39 @@ export function ScoreSlider({ score, onScore, note, onNote, notePlaceholder }) {
   )
 }
 
-export function Divider({ label }) {
+export function Divider({ label }: { label: string }) {
   return (
     <div className="my-4 flex items-center gap-3">
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted">{label}</span>
       <span className="h-px flex-1 bg-bg-2" />
     </div>
+  )
+}
+
+export function Button({
+  children,
+  onClick,
+  variant = 'default',
+  className = '',
+}: {
+  children: ReactNode
+  onClick?: () => void
+  variant?: 'default' | 'primary' | 'success' | 'ghost'
+  className?: string
+}) {
+  const styles = {
+    default: 'border border-bg-2 bg-bg-1 text-secondary hover:border-accent/40 hover:text-primary',
+    primary: 'bg-accent text-bg-0 hover:opacity-90',
+    success: 'bg-success text-bg-0',
+    ghost: 'text-secondary hover:text-primary',
+  }[variant]
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${styles} ${className}`}
+    >
+      {children}
+    </button>
   )
 }

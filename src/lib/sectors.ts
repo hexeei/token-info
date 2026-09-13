@@ -1,26 +1,7 @@
-// Sector dropdown options and a best-effort mapper from CoinGecko categories.
+import type { Sector } from '../types'
 
-export const SECTORS = [
-  'DeFi',
-  'AI',
-  'RWA',
-  'DePIN',
-  'L1',
-  'L2',
-  'Gaming',
-  'Meme',
-  'Infra',
-  'Perp DEX',
-  'Restaking',
-  'Liquid Staking',
-  'SocialFi',
-  'Oracle',
-  'Bridge',
-  'Other',
-]
-
-// Ordered rules: first category string that matches maps to a sector.
-const RULES = [
+// Ordered rules: first CoinGecko category that matches maps to a sector.
+const RULES: [RegExp, Sector][] = [
   [/liquid staking|lsd|lst/i, 'Liquid Staking'],
   [/restaking|eigen/i, 'Restaking'],
   [/perpetual|perp/i, 'Perp DEX'],
@@ -38,9 +19,8 @@ const RULES = [
   [/infrastructure|infra|data availability|node/i, 'Infra'],
 ]
 
-// categories: array of strings from CoinGecko coin.categories
-export function guessSector(categories = []) {
-  const list = (categories || []).filter(Boolean)
+export function guessSector(categories: string[] = []): Sector | '' {
+  const list = categories.filter(Boolean)
   for (const [re, sector] of RULES) {
     if (list.some((c) => re.test(c))) return sector
   }

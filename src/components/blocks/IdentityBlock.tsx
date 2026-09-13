@@ -1,7 +1,8 @@
-import { Block, Field, AutoBadge } from '../ui.jsx'
+import { Block, Field, AutoBadge } from '../ui'
+import type { BlockProps } from './blockProps'
 
 // Block 1 — Identification. Mostly auto-filled, no score.
-export default function IdentityBlock({ a, set, isAuto }) {
+export default function IdentityBlock({ a, set, isAuto }: BlockProps) {
   const id = a.identity
   return (
     <Block index={1} title="Идентификация" subtitle="В основном подтягивается автоматически">
@@ -30,7 +31,7 @@ export default function IdentityBlock({ a, set, isAuto }) {
         <Field label="Тикер" value={id.ticker} onChange={(v) => set('identity.ticker', v)} auto={isAuto('identity.ticker')} mono />
         <Field label="Название" value={id.name} onChange={(v) => set('identity.name', v)} auto={isAuto('identity.name')} />
         <Field label="Сеть / чейн" value={id.chain} onChange={(v) => set('identity.chain', v)} auto={isAuto('identity.chain')} placeholder="Ethereum, Solana…" />
-        <Field label="Контракт-адрес" value={id.contract} onChange={(v) => set('identity.contract', v)} auto={isAuto('identity.contract')} mono placeholder="0x… / mint address" />
+        <Field label="Контракт-адрес" value={id.contract} onChange={(v) => set('identity.contract', v)} auto={isAuto('identity.contract')} mono placeholder="0x… / mint" />
         <Field label="Сайт" value={id.website} onChange={(v) => set('identity.website', v)} auto={isAuto('identity.website')} placeholder="https://" />
         <Field label="Документация / WP" value={id.docs} onChange={(v) => set('identity.docs', v)} auto={isAuto('identity.docs')} placeholder="https://docs…" />
         <Field label="X / Twitter" value={id.twitter} onChange={(v) => set('identity.twitter', v)} auto={isAuto('identity.twitter')} placeholder="https://x.com/…" />

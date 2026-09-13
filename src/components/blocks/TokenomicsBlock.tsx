@@ -1,45 +1,41 @@
-import { Block, Field, Metric, ScoreSlider, Divider } from '../ui.jsx'
-import UnlockTimeline from '../charts/UnlockTimeline.jsx'
-import { computeTokenomics } from '../../lib/scoring.js'
-import { formatPct, toNumber } from '../../lib/format.js'
+import { Block, Field, Metric, ScoreSlider, Divider } from '../ui'
+import UnlockTimeline from '../charts/UnlockTimeline'
+import { computeTokenomics } from '../../lib/scoring'
+import { formatPct, toNumber } from '../../lib/format'
+import { newUnlockId } from '../../config'
+import type { BlockProps } from './blockProps'
+import type { UnlockEvent } from '../../types'
 
-const DIST_FIELDS = [
+const DIST_FIELDS: [keyof typeof EMPTY, string][] = [
   ['team', 'Команда'],
   ['investors', 'Инвесторы'],
   ['community', 'Комьюнити'],
   ['treasury', 'Казна'],
   ['other', 'Прочее'],
 ]
+const EMPTY = { team: '', investors: '', community: '', treasury: '', other: '' }
 
 // Block 3 — Tokenomics: supply, FDV/MC, distribution, unlock timeline.
-export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
+export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }: BlockProps) {
   const t = a.tokenomics
   const tk = computeTokenomics(a)
   const distOk = !tk.distFilled || Math.abs(tk.distSum - 100) <= 0.5
 
-  function addUnlock() {
-    const next = [
-      ...(t.unlocks || []),
-      { id: 'u_' + Math.random().toString(36).slice(2), date: '', amount: '', pctOfCirc: '' },
-    ]
-    set('tokenomics.unlocks', next)
-  }
-  function updateUnlock(id, key, value) {
+  const addUnlock = () =>
+    set('tokenomics.unlocks', [
+      ...t.unlocks,
+      { id: newUnlockId(), date: '', amount: '', pctOfCirc: '' } as UnlockEvent,
+    ])
+  const updateUnlock = (id: string, key: keyof UnlockEvent, value: string) =>
     set(
       'tokenomics.unlocks',
-      (t.unlocks || []).map((u) => (u.id === id ? { ...u, [key]: value } : u)),
+      t.unlocks.map((u) => (u.id === id ? { ...u, [key]: value } : u)),
     )
-  }
-  function removeUnlock(id) {
-    set(
-      'tokenomics.unlocks',
-      (t.unlocks || []).filter((u) => u.id !== id),
-    )
-  }
+  const removeUnlock = (id: string) =>
+    set('tokenomics.unlocks', t.unlocks.filter((u) => u.id !== id))
 
   return (
     <Block index={3} title="Токеномика" subtitle="Supply, разводнение, распределение и анлоки">
-      {/* Supply */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Total supply" value={t.totalSupply} onChange={(v) => set('tokenomics.totalSupply', v)} auto={isAuto('tokenomics.totalSupply')} mono />
         <Field label="Circulating supply" value={t.circulatingSupply} onChange={(v) => set('tokenomics.circulatingSupply', v)} auto={isAuto('tokenomics.circulatingSupply')} mono />
@@ -49,7 +45,6 @@ export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
         <Field label="Цена" value={t.price} onChange={(v) => set('tokenomics.price', v)} auto={isAuto('tokenomics.price')} mono />
       </div>
 
-      {/* Derived metrics */}
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Metric
           label="% в обращении"
@@ -61,7 +56,7 @@ export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
           label="FDV / MC"
           value={tk.fdvMcRatio != null ? `${tk.fdvMcRatio.toFixed(2)}×` : '—'}
           tone={tk.fdvMcRatio != null && tk.fdvMcRatio >= 3 ? 'danger' : tk.fdvMcRatio != null && tk.fdvMcRatio <= 1.2 ? 'success' : 'accent'}
-          hint="высокий = навес токенов впереди"
+          hint="высокий = навес впереди"
         />
         <Metric
           label="Анлок ≤ 90 дн."
@@ -72,7 +67,6 @@ export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
       </div>
 
       <Divider label="Распределение (%)" />
-
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {DIST_FIELDS.map(([key, label]) => (
           <Field
@@ -88,20 +82,15 @@ export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
         ))}
       </div>
       {tk.distFilled && (
-        <div
-          className={`mt-2 flex items-center gap-2 text-xs ${distOk ? 'text-success' : 'text-danger'}`}
-        >
+        <div className={`mt-2 flex items-center gap-2 text-xs ${distOk ? 'text-success' : 'text-danger'}`}>
           <span className="tabular font-semibold">Σ = {tk.distSum.toFixed(1)}%</span>
-          <span>
-            {distOk ? 'сумма сходится к 100%' : 'сумма должна давать 100% — проверьте разбивку'}
-          </span>
+          <span>{distOk ? 'сумма сходится к 100%' : 'сумма должна давать 100% — проверьте разбивку'}</span>
         </div>
       )}
 
       <Divider label="Таймлайн анлоков" />
-
       <div className="space-y-2">
-        {(t.unlocks || []).map((u) => (
+        {t.unlocks.map((u) => (
           <div key={u.id} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-2">
             <MiniField label="Дата" type="date" value={u.date} onChange={(v) => updateUnlock(u.id, 'date', v)} />
             <MiniField label="Объём токенов" value={u.amount} onChange={(v) => updateUnlock(u.id, 'amount', v)} placeholder="напр. 5000000" />
@@ -110,7 +99,7 @@ export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
               type="button"
               onClick={() => removeUnlock(u.id)}
               className="mb-0.5 rounded-lg border border-bg-2 px-2 py-2 text-muted hover:border-danger/50 hover:text-danger"
-              title="Удалить запись"
+              title="Удалить"
             >
               ✕
             </button>
@@ -133,9 +122,8 @@ export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
         <div className="mt-3 flex items-start gap-2 rounded-xl border border-danger/40 bg-danger/10 px-3 py-2.5 text-sm text-danger">
           <span className="mt-0.5">⚑</span>
           <span>
-            Ред-флаг: суммарный анлок{' '}
-            <span className="tabular font-semibold">{formatPct(tk.unlock90dPct)}</span> от circ
-            supply в ближайшие 90 дней (&gt; 10%). Учтено в итоговом вердикте.
+            Ред-флаг: суммарный анлок <span className="tabular font-semibold">{formatPct(tk.unlock90dPct)}</span> от circ
+            supply в ближайшие 90 дней (&gt; 10%). Учтено в вердикте.
           </span>
         </div>
       )}
@@ -151,7 +139,19 @@ export default function TokenomicsBlock({ a, set, setScore, setNote, isAuto }) {
   )
 }
 
-function MiniField({ label, value, onChange, placeholder, type = 'text' }) {
+function MiniField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  type?: string
+}) {
   return (
     <label className="block">
       <span className="text-[11px] text-muted">{label}</span>
