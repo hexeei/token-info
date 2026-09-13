@@ -112,7 +112,8 @@ export function autoAnalyze(a: TokenAnalysis): AutoResult {
       }
     }
     scores.upside = clamp(s, 0, 10)
-    notes.upside = (bits.length ? bits.join(', ') + '. ' : '') + 'Добавьте comps конкурентов для расчёта X-потенциала.'
+    const micro = mc != null && mc < 25e6 ? 'Микрокап: потенциал высокий, но риск ликвидности/выживаемости. ' : ''
+    notes.upside = (bits.length ? bits.join(', ') + '. ' : '') + micro + 'Добавьте comps конкурентов для расчёта X-потенциала.'
   }
 
   return { scores, notes, trendDirection }
