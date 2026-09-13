@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Violet Quant — dark theme */
+  --bg-0: #0f0d13; /* page background */
+  --bg-1: #1a1622; /* cards */
+  --bg-2: #241f2e; /* borders, hovers */
+
+  --text-primary: #ede9f3;
+  --text-secondary: #a29bb0;
+  --text-muted: #7a7288;
+
+  --accent: #a78bfa;  /* violet — scores, neutral accent, radar */
+  --success: #34d399; /* green — upside, good metrics, buyback */
+  --danger: #fb7185;  /* red/coral — risks, red flags */
+
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-0);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Numbers and metrics use a monospace face. */
+.tabular {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Range slider — themed to the violet accent. */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg-1);
+  box-shadow: 0 0 0 1px var(--bg-2);
+  transition: transform 0.1s ease;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg-1);
+}
+
+/* Custom scrollbars for the dark surface. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-2) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--bg-2);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Native form controls inherit the dark surface. */
+select option {
+  background: var(--bg-1);
+  color: var(--text-primary);
+}
